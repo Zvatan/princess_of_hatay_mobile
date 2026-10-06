@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Princess of Hatay</title>
+<!-- iPhone / iPad: "Ana Ekrana Ekle" ile uygulama gibi, adres çubuğu olmadan tam ekran açılır. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Princess of Hatay">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="description" content="Princess of Hatay: Zekeriya'nın Reyhanlı'dan İstanbul'a uzanan, Prenses Beyza'yı kurtarma macerası. Tarayıcıda oynanan piksel-art platform oyunu.">
+<meta name="theme-color" content="#1a0f1f">
+<meta property="og:title" content="Princess of Hatay">
+<meta property="og:description" content="Zombileri yen, Prenses Beyza'yı kurtar! Tarayıcıda oynanan piksel-art platform oyunu.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a0f1f;
+    --wood: #7a4a24;
+    --wood-dark: #3b2210;
+    --wood-light: #c98a4b;
+    --cream: #fff4e0;
+    --pink: #ff8fbf;
+    --gold: #ffd166;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--cream);
+    font-family: "Pixelify Sans", system-ui, sans-serif;
+    /* Dokunmatik: kaydırma, yakınlaştırma, uzun basınca menü ve metin seçimi olmasın. */
+    overscroll-behavior: none; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Dokunmatik cihazda sağ alt düğmeler oyunun dokunmatik düğmeleriyle çakışmasın. */
+  body.touch #dock, body.touch #hint { display: none; }
+
+  /* Telefon dik tutulursa: yan çevirme uyarısı. */
+  #rotate {
+    position: fixed; inset: 0; z-index: 30; display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    background: var(--bg); text-align: center; padding: 24px; font-size: 20px;
+  }
+  #rotate .phone {
+    width: 46px; height: 80px; border: 4px solid var(--cream); border-radius: 9px;
+    animation: turn 1.8s ease-in-out infinite;
+  }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) { body.touch #rotate { display: flex; } }
+
+  /* iPhone/iPad Safari'de (ana ekrana eklenmemişken): nasıl ekleneceğini anlatan şerit. */
+  #install {
+    position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top)); transform: translateX(-50%);
+    z-index: 25; display: none; align-items: center; gap: 12px;
+    width: min(560px, calc(100% - 24px));
+    background: linear-gradient(#8a5530, #6b3f1f); border: 3px solid var(--wood-dark); border-radius: 6px;
+    box-shadow: inset 0 0 0 2px var(--wood-light), 0 6px 20px rgba(0,0,0,.5);
+    padding: 10px 12px; font-size: 15px; line-height: 1.35; text-shadow: 0 2px 0 var(--wood-dark);
+  }
+  #install.show { display: flex; }
+  #install img { width: 44px; height: 44px; border-radius: 10px; flex: none; }
+  #install b { color: var(--gold); }
+  #install .share {
+    display: inline-block; width: 15px; height: 17px; vertical-align: -3px; margin: 0 2px;
+    border: 2px solid var(--cream); border-top: none; border-radius: 0 0 3px 3px; position: relative;
+  }
+  #install .share::before {
+    content: ""; position: absolute; left: 50%; top: -9px; width: 2px; height: 12px;
+    background: var(--cream); transform: translateX(-50%);
+  }
+  #install .share::after {
+    content: ""; position: absolute; left: 50%; top: -10px; width: 6px; height: 6px;
+    border-left: 2px solid var(--cream); border-top: 2px solid var(--cream);
+    transform: translateX(-50%) rotate(45deg);
+  }
+  #install button {
+    margin-left: auto; flex: none; font: 600 18px "Pixelify Sans", sans-serif; color: var(--cream);
+    background: none; border: 0; padding: 4px 8px; cursor: pointer; text-shadow: inherit;
+  }
+
+  /* Oyun: sayfanın tamamını kaplar. */
+  #game {
+    position: fixed; inset: 0; width: 100vw; height: 100dvh;
+    border: 0; display: block; background: #000;
+  }
+
+  /* Sağ alttaki küçük düğmeler: fare hareketsiz kalınca kaybolur. */
+  #dock {
+    position: fixed; right: 14px; bottom: 14px; z-index: 10;
+    display: flex; gap: 8px;
+    transition: opacity .4s ease;
+  }
+  body.idle #dock { opacity: 0; pointer-events: none; }
+  .btn {
+    font: 600 14px/1 "Pixelify Sans", system-ui, sans-serif;
+    color: var(--cream);
+    background: linear-gradient(var(--wood-light), var(--wood));
+    border: 2px solid var(--wood-dark);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,.25), 0 2px 0 var(--wood-dark);
+    padding: 9px 12px; border-radius: 4px; cursor: pointer;
+    text-shadow: 0 2px 0 var(--wood-dark);
+  }
+  .btn:hover { filter: brightness(1.12); }
+  .btn:active { transform: translateY(2px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.25); }
+
+  /* Ortada beliren kısa ipucu. */
+  #hint {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    z-index: 9; pointer-events: none;
+    background: rgba(26, 15, 31, .82); border: 2px solid var(--wood);
+    padding: 8px 14px; border-radius: 4px; font-size: 15px;
+    transition: opacity .6s ease;
+  }
+  #hint.hide { opacity: 0; }
+
+  /* Hakkında penceresi */
+  #about {
+    position: fixed; inset: 0; z-index: 20;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10, 5, 14, .78); padding: 16px;
+  }
+  #about.open { display: flex; }
+  .panel {
+    width: min(760px, 100%); max-height: 100%; overflow: auto;
+    background: linear-gradient(#8a5530, #6b3f1f);
+    border: 4px solid var(--wood-dark); border-radius: 6px;
+    box-shadow: inset 0 0 0 3px var(--wood-light), 0 10px 40px rgba(0,0,0,.6);
+    padding: 22px 24px; text-shadow: 0 2px 0 var(--wood-dark);
+  }
+  .panel header { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+  .panel header img { width: 88px; height: 88px; image-rendering: pixelated; border: 3px solid var(--wood-dark); border-radius: 4px; }
+  .panel h1 { margin: 0; font-size: 34px; color: var(--cream); }
+  .panel .tag { margin: 4px 0 0; color: var(--pink); font-size: 16px; }
+  .panel h2 { font-size: 18px; color: var(--gold); margin: 18px 0 6px; }
+  .panel p { margin: 6px 0; font-size: 16px; line-height: 1.45; }
+  .keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 15px; }
+  kbd {
+    display: inline-block; min-width: 26px; text-align: center;
+    font: 600 13px "Pixelify Sans", monospace; color: var(--wood-dark); text-shadow: none;
+    background: var(--cream); border-bottom: 3px solid #c7b79c; border-radius: 3px; padding: 3px 6px; margin-right: 2px;
+  }
+  .route { display: flex; flex-wrap: wrap; gap: 6px; font-size: 14px; }
+  .route span { background: rgba(0,0,0,.22); border: 1px solid var(--wood-dark); padding: 4px 8px; border-radius: 3px; }
+  .panel footer { display: flex; justify-content: flex-end; margin-top: 18px; }
+
+  @media (max-width: 560px) {
+    .panel h1 { font-size: 26px; }
+    .panel header img { width: 64px; height: 64px; }
+    .keys { font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<script>
+  // Dokunmatik cihaz (iPhone, iPad, Android) mı? iPad Safari kendini Mac gibi tanıttığı için
+  // işletim sistemine değil parmakla kullanılıp kullanılmadığına bakılır. "?touch" test içindir.
+  window.IS_TOUCH = (navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches)
+    || /[?&]touch/.test(location.search);
+  window.IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  window.IS_STANDALONE = navigator.standalone === true
+    || matchMedia('(display-mode: standalone)').matches
+    || matchMedia('(display-mode: fullscreen)').matches;
+  if (window.IS_TOUCH) document.body.classList.add('touch');
+</script>
+
+<iframe id="game" src="game/index.html" title="Princess of Hatay" allow="fullscreen; autoplay; gamepad" allowfullscreen></iframe>
+
+<div id="rotate">
+  <div class="phone"></div>
+  <div>Oynamak için telefonu yan çevir</div>
+</div>
+
+<div id="install" role="note">
+  <img src="icon-180.png" alt="">
+  <div id="install-text"></div>
+  <button type="button" id="install-close" aria-label="Kapat">✕</button>
+</div>
+
+<div id="hint">Tam ekran için ekrana tıkla ya da bir tuşa bas</div>
+
+<div id="dock">
+  <button class="btn" id="btn-fs" type="button">⛶ Tam ekran</button>
+  <button class="btn" id="btn-about" type="button">Hakkında</button>
+</div>
+
+<div id="about" role="dialog" aria-modal="true" aria-labelledby="about-title">
+  <div class="panel">
+    <header>
+      <img src="icon.png" alt="">
+      <div>
+        <h1 id="about-title">Princess of Hatay</h1>
+        <p class="tag">Zombileri yen, Prenses Beyza'yı kurtar!</p>
+      </div>
+    </header>
+
+    <h2>Hikâye</h2>
+    <p>Bir zamanlar Hatay topraklarında, Reyhanlı Krallığı'nda huzur içinde yaşayan güzel Prenses Beyza vardı. Bir gece karanlıktan gelen canavarlar onu kaçırdı. Kral Mustafa, kızını kurtaran savaşçıya büyük bir söz verdi. Cesur savaşçı Zekeriya yola çıkıyor…</p>
+
+    <h2>Yolculuk</h2>
+    <div class="route">
+      <span>1 · Reyhanlı</span><span>2 · Antakya</span><span>3 · İskenderun</span>
+      <span>4 · Kadıköy</span><span>5 · Beşiktaş</span><span>6 · Reyhanlı'ya Dönüş</span>
+    </div>
+
+    <h2>Kontroller</h2>
+    <div class="keys">
+      <div><kbd>A</kbd><kbd>D</kbd></div><div>Yürü (ok tuşları da olur)</div>
+      <div><kbd>W</kbd><kbd>Boşluk</kbd></div><div>Zıpla</div>
+      <div><kbd>S</kbd></div><div>Eğil: oklar ve alev topları üstünden geçer</div>
+      <div><kbd>J</kbd></div><div>Kılıç</div>
+      <div><kbd>F</kbd></div><div>Kahinle, prensesle ve kralla konuş</div>
+      <div><kbd>R</kbd></div><div>Bölümü yeniden başlat</div>
+      <div><kbd>P</kbd></div><div>Duraklat (tam ekranda <kbd>Esc</kbd> tam ekrandan çıkar)</div>
+    </div>
+
+    <h2>Telefon ve tablette</h2>
+    <p>Sol altta ◀ ▶ ile yürü. Sağ altta en sağda ▲ zıpla, ▼ eğil; yanında kılıç. Kahin, prenses veya kralın yanına gelince kılıcın üstünde konuşma düğmesi belirir. Hikâye ve konuşmalar ekrana dokunarak ilerler.</p>
+    <p>iPhone / iPad'de Safari'de <b>Paylaş → Ana Ekrana Ekle</b> dersen oyun ana ekranda simgeyle, uygulama gibi tam ekran açılır.</p>
+
+    <h2>İpuçları</h2>
+    <p>Zombilerin üstüne basarak onları ezebilirsin. Her bölümün sonunda önce bölüm sonu canavarını yenmelisin. Her 40 altında +2 can kazanırsın.</p>
+
+    <footer><button class="btn" id="btn-close" type="button">Oyuna dön ▶</button></footer>
+  </div>
+</div>
+
+<script>
+  const game = document.getElementById('game');
+  const about = document.getElementById('about');
+  const hint = document.getElementById('hint');
+
+  function focusGame() {
+    game.focus();
+    try { game.contentWindow.focus(); } catch (e) {}
+  }
+
+  function isFullscreen() { return !!document.fullscreenElement; }
+
+  function enterFullscreen() {
+    if (isFullscreen() || !document.documentElement.requestFullscreen) return;
+    document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  }
+
+  function toggleFullscreen() {
+    if (isFullscreen()) document.exitFullscreen();
+    else enterFullscreen();
+    focusGame();
+  }
+
+  // Tarayıcılar tam ekranı yalnızca bir tıklama / tuş ile açar:
+  // oyunda yapılan ilk etkileşimde otomatik olarak tam ekrana geç.
+  let autoFullscreenDone = false;
+  function firstInteraction(e) {
+    if (autoFullscreenDone || about.classList.contains('open')) return;
+    if (e.type === 'keydown' && e.key === 'Escape') return;
+    autoFullscreenDone = true;
+    hint.classList.add('hide');
+    enterFullscreen();
+  }
+
+  game.addEventListener('load', () => {
+    focusGame();
+    try {
+      // Oyun aynı sitede: oyunun içindeki tıklama ve tuşları da dinleyebiliriz.
+      const w = game.contentWindow;
+      w.addEventListener('pointerdown', firstInteraction, true);
+      w.addEventListener('keydown', firstInteraction, true);
+      w.addEventListener('mousemove', wake, true);
+    } catch (e) {}
+  });
+  window.addEventListener('pointerdown', firstInteraction, true);
+  window.addEventListener('keydown', firstInteraction, true);
+
+  setTimeout(() => hint.classList.add('hide'), 7000);
+
+  // Düğmeler fare hareketsiz kalınca kaybolur.
+  let idleTimer;
+  function wake() {
+    document.body.classList.remove('idle');
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => document.body.classList.add('idle'), 2500);
+  }
+  window.addEventListener('mousemove', wake);
+  wake();
+
+  document.getElementById('btn-fs').addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', () => {
+    document.getElementById('btn-fs').textContent = isFullscreen() ? '⤢ Pencere' : '⛶ Tam ekran';
+  });
+
+  function openAbout() { about.classList.add('open'); document.getElementById('btn-close').focus(); }
+  function closeAbout() { about.classList.remove('open'); focusGame(); }
+  document.getElementById('btn-about').addEventListener('click', openAbout);
+  document.getElementById('btn-close').addEventListener('click', closeAbout);
+  about.addEventListener('click', (e) => { if (e.target === about) closeAbout(); });
+  about.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAbout(); });
+
+  // Telefon / tablet tarayıcısında (ana ekrana eklenmemişken) nasıl ekleneceğini göster.
+  (function () {
+    const box = document.getElementById('install');
+    if (!window.IS_TOUCH || window.IS_STANDALONE) return;
+    let dismissed = false;
+    try { dismissed = localStorage.getItem('installHintClosed') === '1'; } catch (e) {}
+    if (dismissed) return;
+    document.getElementById('install-text').innerHTML = window.IS_IOS
+      ? 'Uygulama gibi oynamak için Safari\'de <span class="share"></span> <b>Paylaş</b> → <b>Ana Ekrana Ekle</b>'
+      : 'Uygulama gibi oynamak için tarayıcı menüsünden <b>Ana ekrana ekle</b>';
+    box.classList.add('show');
+    document.getElementById('install-close').addEventListener('click', () => {
+      box.classList.remove('show');
+      try { localStorage.setItem('installHintClosed', '1'); } catch (e) {}
+    });
+    setTimeout(() => box.classList.remove('show'), 15000);
+  })();
+</script>
+</body>
+</html>
